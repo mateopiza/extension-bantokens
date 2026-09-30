@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bantokens — Demo simulada</title>
+<style>
+:root{--brand:#0069DB;--navy:#00356F;--bg:#0E1726;--panel:#14203A;--panel2:#1B2A4A;--line:#27395F;--txt:#E8EEF9;--mut:#8FA3C7;--ok:#2BB673;--warn:#F5A524}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,Segoe UI,Roboto,sans-serif;background:#070C16;color:var(--txt)}
+.banner{background:var(--navy);padding:8px 16px;text-align:center;font-size:13px}
+.stage{display:grid;grid-template-columns:1fr 420px;gap:0;min-height:calc(100vh - 34px)}
+.room{background:linear-gradient(135deg,#1c2b4a,#0b1222);display:flex;align-items:center;justify-content:center;color:var(--mut);padding:24px;text-align:center}
+.room b{display:block;font-size:18px;color:var(--txt);margin-bottom:6px}
+.drawer{display:flex;background:var(--bg);border-left:1px solid var(--line);height:calc(100vh - 34px)}
+.rail{width:64px;background:var(--panel);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:4px}
+.rail button{width:54px;background:none;border:0;color:var(--mut);padding:8px 2px;border-radius:10px;cursor:pointer;font-size:10px}
+.rail button .i{display:block;font-size:18px}
+.rail button.on{background:var(--brand);color:#fff}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.head{padding:12px 14px;border-bottom:1px solid var(--line);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.body{flex:1;overflow:auto;padding:12px 14px}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button,.chip{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer}
+.tabs button.on,.chip.on{background:var(--brand);border-color:var(--brand)}
+.msg{background:var(--panel);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+.msg .n{color:var(--mut);font-size:12px}.msg .t{margin-top:4px;padding:4px 8px;background:#0a4a9e;border-radius:6px;font-size:13px}
+.tip{border:1px solid var(--warn);color:var(--warn)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.card h4{margin:0 0 6px;font-size:13px}.mut{color:var(--mut);font-size:12px}
+.opt{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:8px;cursor:pointer}
+.opt:hover{border-color:var(--brand)}.opt small{color:var(--brand);font-weight:600;display:block}
+.bar{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:var(--brand)}
+.row{display:flex;gap:8px}.row>*{flex:1}
+input,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px;font:inherit}
+.btn{background:var(--brand);border:0;color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600}
+.compose{border-top:1px solid var(--line);padding:10px 14px;display:flex;gap:8px}
+.tier{font-size:11px;padding:2px 7px;border-radius:99px;background:var(--panel2)}.vip{color:var(--warn)}.whale{color:#b48cff}
+.fan{cursor:pointer}.fan.sel{border-color:var(--brand)}
+.toast{position:fixed;bottom:16px;left:16px;background:var(--navy);padding:10px 14px;border-radius:10px;opacity:0;transition:.2s}
+.toast.on{opacity:1}
+.pet{font-size:26px;animation:b 2s infinite}@keyframes b{50%{transform:translateY(-4px)}}
+@media(max-width:820px){.stage{grid-template-columns:1fr}.room{display:none}.drawer{height:auto;min-height:90vh}}
+</style>
+</head>
+<body>
+<div class="banner">Demostración con datos 100 % simulados · no hay conexión, cuenta ni personas reales</div>
+<div class="stage">
+  <div class="room"><div><b>Sala en vivo (simulada)</b>Aquí iría la transmisión. El panel de la derecha es el que se inyecta sobre la página.</div></div>
+  <div class="drawer">
+    <nav class="rail" id="rail"></nav>
+    <section class="main"><div class="head"><span id="title"></span><span class="pet" title="Bantip">🪙</span></div><div class="body" id="body"></div><div class="compose" id="compose" hidden></div></section>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const DEST=[["hoy","Día","☀️"],["cam","Cámara","📷"],["stats","Stats","📊"],["bantip","Bantip","💬"],["ia","IA","✨"],["voz","Llamada","🎙️"],["fans","Fans","👥"]];
+const chat=[
+ {n:"user_ana",o:"Hola preciosa, ¿cómo estás hoy?",t:"Hello gorgeous, how are you today?"},
+ {n:"user_luis",o:"Hello! Love your stream 😍",t:"¡Hola! Me encanta tu transmisión 😍"},
+ {n:"user_kim",o:"Do you do private shows?",t:"¿Haces shows privados?"},
+ {n:"user_ana",o:"sent a tip of 50 tokens",t:"",tip:1}];
+const fans=[
+ {n:"user_ana",tk:1240,tier:"whale",lang:"ES",notes:"Le gusta que la salude por su nombre. Conecta los viernes."},
+ {n:"user_luis",tk:180,tier:"vip",lang:"EN",notes:"Pregunta por el menú de propinas."},
+ {n:"user_kim",tk:0,tier:"regular",lang:"EN",notes:""}];
+const tones=["Coqueto","Pícaro","Atrevido","Sumiso","Dominante","My Soul"];
+let cur="bantip",sub="chat",selFan=0,tone="Coqueto",goal=62;
+const $=s=>document.querySelector(s),toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800)};
+function rail(){ $("#rail").innerHTML=DEST.map(d=>`<button class="${d[0]==cur?'on':''}" data-d="${d[0]}"><span class="i">${d[2]}</span>${d[1]}</button>`).join("");
+ $("#rail").querySelectorAll("button").forEach(b=>b.onclick=()=>{cur=b.dataset.d;render()}); }
+const V={
+hoy:()=>`<div class="card"><h4>Buen día 👋</h4><div class="mut">Completa la guía para dejar el asistente listo.</div></div>
+ ${["Llave de acceso","Mi Personalidad","Conocimiento","Mis Reglas","Tip menú","Anuncio rotativo"].map((s,i)=>`<div class="card"><label><input type="checkbox" style="width:auto" ${i<3?'checked':''}> ${s}</label></div>`).join("")}`,
+cam:()=>`<div class="card"><h4>Revisión de cámara</h4><div class="mut">Datos simulados. Sin imagen analizada, el panel diría «Sin analizar», nunca una nota inventada.</div></div>
+ ${[["Iluminación",82],["Fondo",74],["Nitidez",90],["Encuadre",68]].map(r=>`<div class="card"><div class="row"><span>${r[0]}</span><b style="text-align:right">${r[1]}/100</b></div><div class="bar"><i style="width:${r[1]}%"></i></div></div>`).join("")}`,
+stats:()=>`<div class="card"><h4>Meta de la sala</h4><div class="bar"><i style="width:${goal}%"></i></div><div class="mut" style="margin-top:6px">${goal}% · 620 / 1000 tk</div><button class="btn" id="tipb" style="margin-top:8px">Simular propina +50</button></div>
+ <div class="row"><div class="card"><h4>Tokens hoy</h4><b style="font-size:22px">1.480</b></div><div class="card"><h4>Tiempo en vivo</h4><b style="font-size:22px">2:14 h</b></div></div>
+ <div class="card"><h4>Lectura ilegible</h4><b style="font-size:22px">—</b><div class="mut">Lo que no se puede leer se muestra «—», nunca 0.</div></div>`,
+bantip:()=>`<div class="tabs">${[["chat","Chat"],["pm","Privados"],["auto","Auto"]].map(t=>`<button class="${sub==t[0]?'on':''}" data-s="${t[0]}">${t[1]}</button>`).join("")}</div>`+
+ (sub=="chat"?chat.map((m,i)=>`<div class="msg ${m.tip?'tip':''}"><div class="n">${m.n}</div><div>${m.o}</div>${m.t?`<div class="t">${m.t}</div>`:''}${m.t&&!m.tip?`<button class="chip" data-r="${i}" style="margin-top:6px">Sugerir respuesta</button>`:''}</div>`).join("")+`<div id="sug"></div>`:
+  sub=="pm"?`<div class="msg"><div class="n">user_kim · privado</div><div>Hi! Are you available later?</div><div class="t">¡Hola! ¿Estás disponible más tarde?</div></div><div class="mut">Los privados nunca se degradan al chat público: si la entrega falla, se avisa.</div>`:
+  `<div class="card"><h4>Respuesta automática</h4><div class="mut">Agradece propinas y da la bienvenida (ejemplo simulado).</div></div>`),
+ia:()=>`<div class="card"><h4>Tipo de traducción</h4><div class="mut" style="margin-bottom:8px">Tradicional o IA Potenciada con tono</div>${tones.map(t=>`<button class="chip ${tone==t?'on':''}" data-t="${t}" style="margin:0 6px 6px 0">${t}</button>`).join("")}</div>
+ <div class="card"><h4>Mi Personalidad</h4><textarea rows="3">Cercana, divertida y directa. Responde con emojis moderados.</textarea></div>
+ <div class="card"><h4>Menú de propinas (ejemplo)</h4><div class="mut">10 tk · Saludo<br>50 tk · Baile corto<br>200 tk · Petición especial</div><button class="btn" id="gen" style="margin-top:8px">Generar con IA</button><div id="genout" class="mut" style="margin-top:8px"></div></div>`,
+voz:()=>`<div class="card" style="text-align:center"><div style="font-size:48px">🎙️</div><h4>Asistente de voz</h4><div class="mut">Conversación en tiempo real sin soltar la cámara.</div><button class="btn" id="call" style="margin-top:10px">Iniciar llamada (simulada)</button></div>`,
+fans:()=>fans.map((f,i)=>`<div class="card fan ${i==selFan?'sel':''}" data-f="${i}"><div class="row"><b>${f.n}</b><span style="text-align:right"><span class="tier ${f.tier}">${f.tier}</span> ${f.tk} tk</span></div></div>`).join("")+
+ `<div class="card"><h4>Bitácora de ${fans[selFan].n} · idioma ${fans[selFan].lang}</h4><textarea id="notes" rows="4">${fans[selFan].notes}</textarea><div class="mut" style="margin:6px 0">La bitácora es solo-añadir: una nota vacía nunca borra el historial.</div><button class="btn" id="save">Guardar</button></div>`};
+const SUG={"Coqueto":["Hola guapo 😘 me alegra verte por aquí","Gracias por pasarte, ¡me haces el día! 💕","Qué lindo, cuéntame qué te trae por aquí 😏"]};
+function render(){ rail(); $("#title").textContent=DEST.find(d=>d[0]==cur)[1]; $("#body").innerHTML=V[cur]();
+ $("#compose").hidden=!(cur=="bantip"&&sub=="chat");
+ if(!$("#compose").hidden&&!$("#compose").innerHTML)$("#compose").innerHTML=`<input id="out" placeholder="Escribe en español…"><button class="btn" id="tr">🌐 Traducir</button>`;
+ bind(); }
+function bind(){
+ document.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{sub=b.dataset.s;render()});
+ document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{tone=b.dataset.t;toast("Tono: "+tone);render()});
+ document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{selFan=+b.dataset.f;render()});
+ document.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{const s=$("#sug");s.innerHTML='<div class="mut">Redactando…</div>';setTimeout(()=>{s.innerHTML=["Cálida","Coqueta","Estratégica"].map((k,i)=>`<div class="opt" data-ins="${i}"><small>${k}</small>${SUG.Coqueto[i]}</div>`).join("");s.querySelectorAll(".opt").forEach(o=>o.onclick=()=>{$("#out").value=SUG.Coqueto[+o.dataset.ins];toast("Insertado en el compositor")})},600)});
+ const tr=$("#tr");if(tr)tr.onclick=()=>{const v=$("#out").value.trim();if(!v)return;$("#out").value="[EN · "+tone+"] "+v.replace(/^/,"");toast("Traducido (simulado)")};
+ const tb=$("#tipb");if(tb)tb.onclick=()=>{goal=Math.min(100,goal+5);toast("+50 tk · la mascota celebra 🎉");render()};
+ const g=$("#gen");if(g)g.onclick=()=>{$("#genout").textContent="Generando…";setTimeout(()=>$("#genout").textContent="Menú sugerido: 15 tk Saludo · 60 tk Baile · 250 tk Petición (simulado)",700)};
+ const c=$("#call");if(c)c.onclick=()=>{c.textContent="En llamada… (simulada)"};
+ const s=$("#save");if(s)s.onclick=()=>{const v=$("#notes").value.trim();if(!v){toast("Nota vacía: se conserva la anterior");return}fans[selFan].notes=v;toast("Bitácora guardada")};
+}
+render();
+</script>
+</body>
+</html>
